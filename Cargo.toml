@@ -1,0 +1,37 @@
+[package]
+name = "bckwe"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A no_std zero-dependency stack machine for B, C, K, W combinators with external effects."
+keywords = ["bckw", "combinators", "logic", "no-std", "interpreter"]
+categories = ["algorithms", "no-std"]
+include = ["src/**", "tests/**", "examples/**", "Cargo.toml", "README*", "LICENSE*", "CHANGELOG*"]
+
+license = "BSD-2-Clause"
+authors = ["Hans S. <hans@0x8.io>"]
+repository = "https://github.com/DaBigBlob/bckwe"
+readme = "README.md"
+
+[dependencies]
+
+[lints.rust]
+missing_docs = "warn"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = 0
+strip = "symbols"
+incremental = false
+debug-assertions = false
+overflow-checks = false
+
+[profile.release-small]
+inherits = "release"
+opt-level = "s"
+
+[profile.release-fast]
+inherits = "release"
