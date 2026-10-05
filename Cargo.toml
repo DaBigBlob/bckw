@@ -32,6 +32,3 @@ overflow-checks = false
 [profile.release-small]
 inherits = "release"
 opt-level = "s"
-
-[profile.release-fast]
-inherits = "release"
