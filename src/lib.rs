@@ -5,6 +5,17 @@ extern crate alloc;
 use core::fmt::Debug;
 use alloc::vec::Vec;
 
+macro_rules! unreachable_fast {
+    ($($arg:tt)*) => {{
+        #[cfg(debug_assertions)]
+        { unreachable!($($arg)*) }
+
+        #[cfg(not(debug_assertions))]
+        // SAFETY: each call site proves unreachable.
+        unsafe { core::hint::unreachable_unchecked() }
+    }};
+}
+
 /** Essentially a stack (backed by Vec) for the underlying stack machine */
 #[derive(Clone)]
 pub struct MStack(Vec<Expr>);
@@ -112,7 +123,7 @@ impl MStack {
             Some(fst) => match fst {
                 M(_) => match self.pop() {
                     Some(M(modus)) => Ok(self.append(modus)), // ((a...) b...) => (a... b...),
-                    _ => unreachable!("re-match after ownership"),
+                    _ => unreachable_fast!("re-match after ownership"),
                 }, // recur till 1 norm
                 A(axiom) => match axiom {
                     B => {
@@ -144,7 +155,7 @@ impl MStack {
                             Ok(next) => Ok(next),
                             Err(rest) => Err(rest.push(A(E(eff)))),
                         },
-                        _ => unreachable!("re-match after ownership"),
+                        _ => unreachable_fast!("re-match after ownership"),
                     },
                 },
             },
