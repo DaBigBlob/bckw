@@ -5,17 +5,6 @@ extern crate alloc;
 use core::fmt::Debug;
 use alloc::vec::Vec;
 
-macro_rules! unreachable_fast {
-    ($($arg:tt)*) => {{
-        #[cfg(debug_assertions)]
-        { unreachable!($($arg)*) }
-
-        #[cfg(not(debug_assertions))]
-        // SAFETY: each call site proves unreachable.
-        unsafe { core::hint::unreachable_unchecked() }
-    }};
-}
-
 /** Essentially a stack (backed by Vec) for the underlying stack machine */
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MStack<Ex>(Vec<Expr<Ex>>);
@@ -114,7 +103,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
                 Err(mut x) => return if x.len() == 1 {
                     match x.pop() {
                         Some(exp) => Ok(exp),
-                        None => unreachable!(),
+                        None => unreachable!("checked len == 1"),
                     }
                 } else { Err(x) },
             }
@@ -126,7 +115,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
             Some(fst) => match fst {
                 M(_) => match self.pop() {
                     Some(M(modus)) => Ok(self.append(modus)), // ((a...) b...) => (a... b...),
-                    _ => unreachable_fast!("re-match after ownership"),
+                    _ => unreachable!("re-match after ownership"),
                 }, // recur till 1 norm
                 A(axiom) => match axiom {
                     B => {
@@ -158,7 +147,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
                             Ok(next) => Ok(next),
                             Err(rest) => Err(rest.push(A(E(eff)))),
                         },
-                        _ => unreachable_fast!("re-match after ownership"),
+                        _ => unreachable!("re-match after ownership"),
                     },
                 },
             },
