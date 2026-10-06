@@ -1,4 +1,4 @@
-# BCKWE
+# BCKW
 A no_std zero-dependency stack machine for Curry's B, C, K, W combinators with support for external effects.
 
 - Freestanding (no_std): does not depend on system libraries.
