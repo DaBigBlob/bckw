@@ -1,4 +1,4 @@
-//! A no_std zero-dependency stack machine for B, C, K, W combinators with external effects.
+//! A no_std zero-dependency stack machine for Curry's B, C, K, W combinators with support for external effects.
 
 #![no_std]
 extern crate alloc;
