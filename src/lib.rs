@@ -138,7 +138,10 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
                     },
                     W => {
                         match self.pop3() {
-                            Ok(((_, x, y), ss)) => Ok(ss.push(Expr::from((Expr::from((x, y.clone())), y)))),
+                            Ok(((_, x, y), ss)) => match x {
+                                A(K) => Ok(ss.push(y)), // WK = I optimization
+                                _ => Ok(ss.push(Expr::from((Expr::from((x, y.clone())), y)))),
+                            },
                             Err(slf) => Err(slf),
                         }
                     },
