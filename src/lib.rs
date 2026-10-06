@@ -37,7 +37,7 @@ impl MStack {
         if self.len() < 3 { return Err(self) } // restore and return
         let (f, x, y) = match (self.pop(), self.pop(), self.pop()) {
             ( Some(f), Some(x), Some(y)) => (f, x, y),
-            _ => unreachable!() // we have checked 3
+            _ => unreachable!("we have checked 3")
         };
         Ok(((f, x, y), self))
     }
@@ -45,15 +45,13 @@ impl MStack {
         if self.len() < 4 { return Err(self) } // restore and return
         let (f, x, y, z) = match (self.pop(), self.pop(), self.pop(), self.pop()) {
             (Some(f), Some(x), Some(y), Some(z)) => (f, x, y, z),
-            _ => unreachable!() // we have checked 4
+            _ => unreachable!("we have checked 4")
         };
         Ok(((f, x, y, z), self))
     }
 }
 impl From<(Expr, Expr)> for MStack {
-    fn from((f, x): (Expr, Expr)) -> Self {
-        Self::new().push(x).push(f)
-    }
+    fn from((f, x): (Expr, Expr)) -> Self { Self::new().push(x).push(f) }
 }
 
 /** Signature of External axiom.
