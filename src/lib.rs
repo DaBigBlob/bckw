@@ -34,27 +34,35 @@ impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
     fn from((f, x): (Expr<Ex>, Expr<Ex>)) -> Self { Self::new().push(x).push(f) }
 }
 
-/** Signature of External axiom.
- * The implementer may want to implement the Eq trait.
- */
+/** Signature of External axiom.*/
+///
+/// It is recommended to not implement weird Clone or Drop (else W, K might misbehave).
 pub trait ExtAxiom: Sized {
     /// Receives remaining stack excluding this axiom.
     ///
-    /// Must return original arguments intact on Err (but ExtAxiom allowed to have internal mutation).
-    fn call(&mut self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
+    /// Must return original arguments intact on Err.
+    fn call(&self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
 }
 
 /** Root expression: Hilbert Style axiom schemes and Modus Ponens */
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Expr<Ex> {
     /// Modus ponens (the only rule) application list
     M(MStack<Ex>),
     /// Axiom
     A(Axiom<Ex>)
 }
+impl <Ex: Debug> Debug for Expr<Ex> { // #[derive(Debug)] fails somewhy
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::M(m) => write!(f, "{:?}", m),
+            Self::A(a) => write!(f, "{:?}", a),
+        }
+    }
+}
 use Expr::*;
 impl <Ex> From<Ex> for Expr<Ex> {
-    fn from(value: Ex) -> Self { A(E(value)) }
+    fn from(value: Ex) -> Self { A(Axiom::from(value)) }
 }
 impl <Ex> From<Axiom<Ex>> for Expr<Ex> {
     fn from(value: Axiom<Ex>) -> Self { A::<Ex>(value) }
@@ -133,7 +141,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
                         if self.len() < 3 { return Err(self);}
                         let (x, xs) = self.pop()?.1.pop()?;
                         match x {
-                            A(K) => Ok(xs),
+                            A(K) => Ok(xs), // WK = I optimization
                             _ => {
                                 let (y, ys) = xs.pop()?;
                                 Ok(ys.push(Expr::from((Expr::from((x, y.clone())), y))))
@@ -141,7 +149,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
                         }
                     },
                     E(_) => match self.pop() {
-                        Ok((A(E(mut eff)), xs)) => match eff.call(xs) {
+                        Ok((A(E(eff)), xs)) => match eff.call(xs) {
                             Ok(next) => Ok(next),
                             Err(rest) => Err(rest.push(A(E(eff)))),
                         },
