@@ -5,7 +5,9 @@ extern crate alloc;
 use core::fmt::Debug;
 use alloc::vec::Vec;
 
-/** Essentially a stack (backed by Vec) for the underlying stack machine */
+/** Essentially a stack (backed by Vec) for the underlying stack machine
+ * Implemented functions behave how they are named (and typed).
+ */
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MStack<Ex>(Vec<Expr<Ex>>);
 impl <Ex: Debug> Debug for MStack<Ex> {
@@ -98,7 +100,7 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
             }
         }
     }
-    /// 1 step of normalization (except KW = I)
+    /// 1 step of normalization (except WK = I)
     pub fn modus_ponens(self) -> Result<Self, Self> { // Err => same
         match self.peek() {
             Some(fst) => match fst {
