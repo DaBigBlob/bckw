@@ -81,7 +81,7 @@ impl From<(Expr, Expr)> for Expr {
 /** Hilbert Style axiom schemes */
 #[derive(Clone)]
 pub enum Axiom {
-    /** B x y z = z (y z) */B, /** C x y z = x z y */ C,
+    /** B x y z = x (y z) */B, /** C x y z = x z y */ C,
     /** K x y = x */        K,  /** W x y = x y y */  W,
     /// External axiom; effect (including on the entire stack).
     E(ExternalAxiom)
