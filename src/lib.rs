@@ -3,18 +3,23 @@
 #![no_std]
 extern crate alloc;
 use core::fmt::Debug;
-use alloc::vec::Vec;
+use alloc::{rc::Rc, vec::Vec};
 
 /** Essentially a stack (backed by Vec) for the underlying stack machine
  * Implemented functions behave how they are named (and typed).
  */
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MStack<Ex>(Vec<Expr<Ex>>);
 impl <Ex: Debug> Debug for MStack<Ex> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "( ")?;
         self.0.iter().rev().try_for_each(|x| write!(f, "{:?} ", x))?;
         write!(f, ")")
+    }
+}
+impl <Ex> Clone for MStack<Ex> { // #[derive(Clone)] needs Ex: Clone
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
 }
 impl <Ex> MStack<Ex> {
@@ -34,29 +39,27 @@ impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
     fn from((f, x): (Expr<Ex>, Expr<Ex>)) -> Self { Self::new().push(x).push(f) }
 }
 
-/** Signature of External axiom.*/
-///
-/// It is recommended to not implement weird Clone or Drop (else W, K might misbehave).
-pub trait ExtAxiom: Sized {
-    /// Receives remaining stack excluding this axiom.
-    ///
-    /// Must return original arguments intact on Err.
-    fn call(&self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
-}
-
 /** Root expression: Hilbert Style axiom schemes and Modus Ponens */
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Expr<Ex> {
     /// Modus ponens (the only rule) application list
     M(MStack<Ex>),
     /// Axiom
     A(Axiom<Ex>)
 }
-impl <Ex: Debug> Debug for Expr<Ex> { // #[derive(Debug)] fails somewhy
+impl <Ex: Debug> Debug for Expr<Ex> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::M(m) => write!(f, "{:?}", m),
             Self::A(a) => write!(f, "{:?}", a),
+        }
+    }
+}
+impl <Ex> Clone for Expr<Ex> { // #[derive(Clone)] needs Ex: Clone
+    fn clone(&self) -> Self {
+        match self {
+            Self::M(arg0) => Self::M(arg0.clone()),
+            Self::A(arg0) => Self::A(arg0.clone()),
         }
     }
 }
@@ -72,12 +75,12 @@ impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for Expr<Ex> {
 }
 
 /** Hilbert Style axiom schemes */
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Axiom<Ex> {
     /** B x y z = x (y z) */B, /** C x y z = x z y */ C,
     /** K x y = x */        K,  /** W x y = x y y */  W,
     /// External axiom; effect (including on the entire stack).
-    E(Ex)
+    E(Rc<Ex>) // Single threaded so Arc not needed
 }
 use Axiom::*;
 impl <Ex: Debug> Debug for Axiom<Ex> {
@@ -89,11 +92,33 @@ impl <Ex: Debug> Debug for Axiom<Ex> {
         }
     }
 }
+impl <Ex> Clone for Axiom<Ex> { // #[derive(Clone)] needs Ex: Clone
+    fn clone(&self) -> Self {
+        match self {
+            Self::B => Self::B, Self::C => Self::C,
+            Self::K => Self::K, Self::W => Self::W,
+            Self::E(arg0) => Self::E(arg0.clone()),
+        }
+    }
+}
 impl <Ex> From<Ex> for Axiom<Ex> {
-    fn from(value: Ex) -> Self { E(value) }
+    fn from(value: Ex) -> Self { E(Rc::new(value)) }
 }
 
-impl <Ex: ExtAxiom + Clone> MStack<Ex> {
+/** Signature of External axiom.*/
+///
+/// NOTE: This object is kept behind Rc so will never be cloned by the runtime,
+/// and if dropped, will never be reused.
+pub trait ExtAxiom: Sized {
+    /// Receives remaining stack excluding this axiom.
+    ///
+    /// Must return original arguments intact on Err.
+    ///
+    /// NOTE: Implementations must regard arguments in their Beta Equivalency classes.
+    fn call(&self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
+}
+
+impl <Ex: ExtAxiom> MStack<Ex> {
     /// Normalize to 1 Expression or failed application
     pub fn norm(mut self) -> Result<Expr<Ex>, Self> {
         loop {
