@@ -16,27 +16,16 @@ impl <Ex: Debug> Debug for MStack<Ex> {
     }
 }
 impl <Ex> MStack<Ex> {
-    pub(crate) const fn new() -> Self { Self(Vec::new()) }
-    pub(crate) fn len(&self) -> usize { self.0.len() }
-    pub(crate) fn push(mut self, value: Expr<Ex>) -> Self { self.0.push(value); self}
-    pub(crate) fn peek(&self) -> Option<&Expr<Ex>> { self.0.last() }
-    pub(crate) fn append(mut self, mut other: Self) -> Self { self.0.append(&mut other.0); self }
-    pub(crate) fn pop(&mut self) -> Option<Expr<Ex>> { self.0.pop() }
-    pub(crate) fn pop3(mut self) -> Result<((Expr<Ex>, Expr<Ex>, Expr<Ex>), Self), Self> {
-        if self.len() < 3 { return Err(self) } // restore and return
-        let (f, x, y) = match (self.pop(), self.pop(), self.pop()) {
-            ( Some(f), Some(x), Some(y)) => (f, x, y),
-            _ => unreachable!("we have checked 3")
-        };
-        Ok(((f, x, y), self))
-    }
-    pub(crate) fn pop4(mut self) -> Result<((Expr<Ex>, Expr<Ex>, Expr<Ex>, Expr<Ex>), Self), Self> {
-        if self.len() < 4 { return Err(self) } // restore and return
-        let (f, x, y, z) = match (self.pop(), self.pop(), self.pop(), self.pop()) {
-            (Some(f), Some(x), Some(y), Some(z)) => (f, x, y, z),
-            _ => unreachable!("we have checked 4")
-        };
-        Ok(((f, x, y, z), self))
+    pub const fn new() -> Self { Self(Vec::new()) }
+    pub fn len(&self) -> usize { self.0.len() }
+    pub fn push(mut self, value: Expr<Ex>) -> Self { self.0.push(value); self}
+    pub fn peek(&self) -> Option<&Expr<Ex>> { self.0.last() }
+    pub fn append(mut self, mut other: Self) -> Self { self.0.append(&mut other.0); self }
+    pub fn pop(mut self) -> Result<(Expr<Ex>, Self), Self> {
+        match self.0.pop() {
+            Some(exp) => Ok((exp, self)),
+            None => Err(self),
+        }
     }
 }
 impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
@@ -49,7 +38,7 @@ impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
 pub trait ExtAxiom: Sized {
     /// Receives remaining stack excluding this axiom.
     ///
-    /// Must return original arguments intact (but ExtAxiom allowed to have internal mutation).
+    /// Must return original arguments intact on Err (but ExtAxiom allowed to have internal mutation).
     fn call(&mut self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
 }
 
@@ -58,11 +47,11 @@ pub trait ExtAxiom: Sized {
 pub enum Expr<Ex> {
     /// Modus ponens (the only rule) application list
     M(MStack<Ex>),
-    /// axiom
+    /// Axiom
     A(Axiom<Ex>)
 }
 use Expr::*;
-impl <Ex: ExtAxiom> From<Ex> for Expr<Ex> {
+impl <Ex> From<Ex> for Expr<Ex> {
     fn from(value: Ex) -> Self { A(E(value)) }
 }
 impl <Ex> From<Axiom<Ex>> for Expr<Ex> {
@@ -90,7 +79,7 @@ impl <Ex: Debug> Debug for Axiom<Ex> {
         }
     }
 }
-impl <Ex: ExtAxiom> From<Ex> for Axiom<Ex> {
+impl <Ex> From<Ex> for Axiom<Ex> {
     fn from(value: Ex) -> Self { E(value) }
 }
 
@@ -100,53 +89,57 @@ impl <Ex: ExtAxiom + Clone> MStack<Ex> {
         loop {
             match self.modus_ponens() {
                 Ok(nx) => { self = nx },
-                Err(mut x) => return if x.len() == 1 {
+                Err(x) => return if x.len() == 1 {
                     match x.pop() {
-                        Some(exp) => Ok(exp),
-                        None => unreachable!("checked len == 1"),
+                        Ok((exp, _)) =>  Ok(exp),
+                        _ => unreachable!("checked len == 1"),
                     }
                 } else { Err(x) },
             }
         }
     }
-    /// 1 step of normalization
-    pub fn modus_ponens(mut self) -> Result<Self, Self> { // Err => same
+    /// 1 step of normalization (except KW = I)
+    pub fn modus_ponens(self) -> Result<Self, Self> { // Err => same
         match self.peek() {
             Some(fst) => match fst {
                 M(_) => match self.pop() {
-                    Some(M(modus)) => Ok(self.append(modus)), // ((a...) b...) => (a... b...),
+                    Ok((M(modus), xs)) => Ok(xs.append(modus)), // ((a...) b...) => (a... b...),
                     _ => unreachable!("re-match after ownership"),
-                }, // recur till 1 norm
+                },
                 A(axiom) => match axiom {
                     B => {
-                        match self.pop4() {
-                            Ok(((_, x, y, z), ss)) => Ok(ss.push(Expr::from((x, Expr::from((y, z)))))),
-                            Err(slf) => Err(slf),
-                        }
+                        if self.len() < 4 { return Err(self);}
+                        let (x, xs) = self.pop()?.1.pop()?;
+                        let (y, ys) = xs.pop()?;
+                        let (z, zs) = ys.pop()?;
+                        Ok(zs.push(Expr::from((x, Expr::from((y, z))))))
                     },
                     C => {
-                        match self.pop4() {
-                            Ok(((_, x, y, z), ss)) => Ok(ss.push(Expr::from((Expr::from((x, z)), y)))),
-                            Err(slf) => Err(slf),
-                        }
+                        if self.len() < 4 { return Err(self);}
+                        let (x, xs) = self.pop()?.1.pop()?;
+                        let (y, ys) = xs.pop()?;
+                        let (z, zs) = ys.pop()?;
+                        Ok(zs.push(Expr::from((Expr::from((x, z)), y))))
                     },
                     K => {
-                        match self.pop3() {
-                            Ok(((_, x, _), ss)) => Ok(ss.push(x)),
-                            Err(slf) => Err(slf),
-                        }
+                        if self.len() < 3 { return Err(self);}
+                        let (x, xs) = self.pop()?.1.pop()?;
+                        let (_, ys) = xs.pop()?;
+                        Ok(ys.push(x))
                     },
                     W => {
-                        match self.pop3() {
-                            Ok(((_, x, y), ss)) => match x {
-                                A(K) => Ok(ss.push(y)), // WK = I optimization
-                                _ => Ok(ss.push(Expr::from((Expr::from((x, y.clone())), y)))),
+                        if self.len() < 3 { return Err(self);}
+                        let (x, xs) = self.pop()?.1.pop()?;
+                        match x {
+                            A(K) => Ok(xs),
+                            _ => {
+                                let (y, ys) = xs.pop()?;
+                                Ok(ys.push(Expr::from((Expr::from((x, y.clone())), y))))
                             },
-                            Err(slf) => Err(slf),
                         }
                     },
                     E(_) => match self.pop() {
-                        Some(A(E(mut eff))) => match eff.call(self) {
+                        Ok((A(E(mut eff)), xs)) => match eff.call(xs) {
                             Ok(next) => Ok(next),
                             Err(rest) => Err(rest.push(A(E(eff)))),
                         },

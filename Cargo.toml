@@ -1,6 +1,6 @@
 [package]
 name = "bckw"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "A no_std zero-dependency stack machine for Curry's B, C, K, W combinators with support for external effects."
@@ -14,9 +14,6 @@ repository = "https://github.com/DaBigBlob/bckw"
 readme = "README.md"
 
 [dependencies]
-
-[lints.rust]
-missing_docs = "warn"
 
 [profile.release]
 opt-level = 3
