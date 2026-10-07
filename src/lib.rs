@@ -31,6 +31,7 @@ impl <Ex> Clone for Expr<Ex> { // #[derive(Clone)] needs Ex: Clone
         }
     }
 }
+
 use Expr::*;
 
 impl <Ex> From<Ex> for Expr<Ex> {

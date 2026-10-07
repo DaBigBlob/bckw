@@ -10,6 +10,7 @@ pub enum Axiom<Ex> {
     /// External axiom; effect (including on the entire stack).
     E(Rc<Ex>) // Single threaded so Arc not needed
 }
+
 use Axiom::*;
 
 impl <Ex: Debug> Debug for Axiom<Ex> {
