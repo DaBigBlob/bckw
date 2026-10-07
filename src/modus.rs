@@ -1,5 +1,3 @@
-//! A no_std zero-dependency stack machine for Curry's B, C, K, W combinators with support for external effects.
-
 extern crate alloc;
 use core::fmt::Debug;
 use alloc::vec::Vec;
