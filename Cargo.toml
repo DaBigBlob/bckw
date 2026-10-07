@@ -1,10 +1,10 @@
 [package]
 name = "bckw"
-version = "0.2.4"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "A tiny no_std zero-dependency stack machine for Curry's B, C, K, W combinators with support for external effects."
-keywords = ["bckw", "combinators", "logic", "no-std", "interpreter"]
+keywords = ["bckw", "combinators", "logic", "no-std", "interpreter", "ski", "lambda-calculus"]
 categories = ["algorithms", "no-std"]
 include = ["src/**", "tests/**", "examples/**", "Cargo.toml", "README*", "LICENSE*", "CHANGELOG*"]
 
