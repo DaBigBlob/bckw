@@ -5,45 +5,14 @@ extern crate alloc;
 use core::fmt::Debug;
 use alloc::{rc::Rc, vec::Vec};
 
-/** Essentially a stack (backed by Vec) for the underlying stack machine
- * Implemented functions behave how they are named (and typed).
- */
-#[derive(PartialEq, Eq, Hash)]
-pub struct MStack<Ex>(Vec<Expr<Ex>>);
-impl <Ex: Debug> Debug for MStack<Ex> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.0.iter().rev().try_for_each(|x| write!(f, "{:?} ", x))
-    }
-}
-impl <Ex> Clone for MStack<Ex> { // #[derive(Clone)] needs Ex: Clone
-    fn clone(&self) -> Self { Self(self.0.clone()) }
-}
-impl <Ex> MStack<Ex> {
-    pub const fn new() -> Self { Self(Vec::new()) }
-    pub fn len(&self) -> usize { self.0.len() }
-    pub fn push(mut self, value: Expr<Ex>) -> Self { self.0.push(value); self}
-    pub fn peek(&self) -> Option<&Expr<Ex>> { self.0.last() }
-    pub fn append(mut self, mut other: Self) -> Self { self.0.append(&mut other.0); self }
-    pub fn pop(mut self) -> Result<(Expr<Ex>, Self), Self> {
-        match self.0.pop() {
-            Some(exp) => Ok((exp, self)),
-            None => Err(self),
-        }
-    }
-}
-impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
-    fn from((f, x): (Expr<Ex>, Expr<Ex>)) -> Self { Self::new().push(x).push(f) }
-}
-
 /** Root expression: Hilbert Style axiom schemes and Modus Ponens */
 #[derive(PartialEq, Eq, Hash)]
 pub enum Expr<Ex> {
     /// Modus ponens (the only rule) application list
     M(MStack<Ex>),
-    // Axioms
-    /** B x y z = x (y z) */B, /** C x y z = x z y */ C,
-    /** K x y = x */        K,  /** W x y = x y y */  W,
-    /// External axiom; effect (including on the entire stack).
+    /** Axiom: B x y z = x (y z) */ B,  /** Axiom: C x y z = x z y */ C,
+    /** Axiom: K x y = x */         K,  /** Axiom: W x y = x y y */   W,
+    /// External axiom/variable; may have effects.
     E(Rc<Ex>) // Single threaded so Arc not needed
 }
 use Expr::*;
@@ -51,10 +20,8 @@ impl <Ex: Debug> Debug for Expr<Ex> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             M(m) => write!(f, "( {:?})", m),
-            B => write!(f, "B"),
-            C => write!(f, "C"),
-            K => write!(f, "K"),
-            W => write!(f, "W"),
+            B => write!(f, "B"), C => write!(f, "C"),
+            K => write!(f, "K"), W => write!(f, "W"),
             E(ex) => write!(f, "#\"{:?}\"", ex)
         }
     }
@@ -87,7 +54,36 @@ pub trait ExtAxiom: Sized {
     /// NOTE: Implementations must regard arguments in their Beta Equivalency classes.
     fn call(&self, args: MStack<Self>) -> Result<MStack<Self>, MStack<Self>>;
 }
+/** Essentially a stack (backed by Vec) for the underlying stack machine
+ * Implemented functions behave how they are named (and typed).
+ */
 
+#[derive(PartialEq, Eq, Hash)]
+pub struct MStack<Ex>(Vec<Expr<Ex>>);
+impl <Ex: Debug> Debug for MStack<Ex> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.0.iter().rev().try_for_each(|x| write!(f, "{:?} ", x))
+    }
+}
+impl <Ex> Clone for MStack<Ex> { // #[derive(Clone)] needs Ex: Clone
+    fn clone(&self) -> Self { Self(self.0.clone()) }
+}
+impl <Ex> MStack<Ex> {
+    pub const fn new() -> Self { Self(Vec::new()) }
+    pub fn len(&self) -> usize { self.0.len() }
+    pub fn push(mut self, value: Expr<Ex>) -> Self { self.0.push(value); self}
+    pub fn peek(&self) -> Option<&Expr<Ex>> { self.0.last() }
+    pub fn append(mut self, mut other: Self) -> Self { self.0.append(&mut other.0); self }
+    pub fn pop(mut self) -> Result<(Expr<Ex>, Self), Self> {
+        match self.0.pop() {
+            Some(exp) => Ok((exp, self)),
+            None => Err(self),
+        }
+    }
+}
+impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for MStack<Ex> {
+    fn from((f, x): (Expr<Ex>, Expr<Ex>)) -> Self { Self::new().push(x).push(f) }
+}
 impl <Ex: ExtAxiom> MStack<Ex> {
     /// Normalize to 1 Expression or failed application
     pub fn norm(mut self) -> Result<Expr<Ex>, Self> {
