@@ -2,7 +2,7 @@ use core::fmt::Debug;
 use alloc::rc::Rc;
 use crate::modus::MStack;
 
-/** Hilbert Style axiom schemes */
+/** Curry's combinators (axioms) with effect */
 #[derive(PartialEq, Eq, Hash)]
 pub enum Axiom<Ex> {
     /** B x y z = x (y z) */B, /** C x y z = x z y */ C,
