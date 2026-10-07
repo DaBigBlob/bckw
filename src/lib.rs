@@ -112,14 +112,14 @@ impl <Ex: ExtAxiom> MStack<Ex> {
                     let (x, xs) = self.pop()?.1.pop()?;
                     let (y, ys) = xs.pop()?;
                     let (z, zs) = ys.pop()?;
-                    Ok(zs.push(Expr::from((x, Expr::from((y, z))))))
+                    Ok(zs.push((x, (y, z).into()).into()))
                 },
                 C => {
                     if self.len() < 4 { return Err(self);}
                     let (x, xs) = self.pop()?.1.pop()?;
                     let (y, ys) = xs.pop()?;
                     let (z, zs) = ys.pop()?;
-                    Ok(zs.push(Expr::from((Expr::from((x, z)), y))))
+                    Ok(zs.push(((x, z).into(), y).into()))
                 },
                 K => {
                     if self.len() < 3 { return Err(self);}
@@ -134,7 +134,7 @@ impl <Ex: ExtAxiom> MStack<Ex> {
                         K => Ok(xs), // WK = I optimization
                         _ => {
                             let (y, ys) = xs.pop()?;
-                            Ok(ys.push(Expr::from((Expr::from((x, y.clone())), y))))
+                            Ok(ys.push(((x, y.clone()).into(), y).into()))
                         },
                     }
                 },
