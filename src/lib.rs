@@ -51,7 +51,7 @@ impl <Ex> Clone for Expr<Ex> {
 impl <Ex> From<(Expr<Ex>, Expr<Ex>)> for Expr<Ex> {
     fn from(value: (Expr<Ex>, Expr<Ex>)) -> Self { M(MStack::from(value)) }
 }
-impl <Ex: ExtAxiom> From<Ex> for Expr<Ex> {
+impl <Ex> From<Ex> for Expr<Ex> {
     fn from(value: Ex) -> Self { E(Rc::new(value)) }
 }
 
