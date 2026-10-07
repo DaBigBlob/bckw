@@ -21,7 +21,7 @@ pub trait ExtAxiom: Sized {
 /** Root expression: Hilbert Style axiom schemes and Modus Ponens */
 #[derive(PartialEq, Eq, Hash)]
 pub enum Expr<Ex> {
-    /// Modus ponens (the only rule) application list. (one with empty list = I)
+    /// Modus ponens (the only rule) application list. NOTE: `M(MStack::new()) = I`
     M(MStack<Ex>),
     /** Axiom: B x y z = x (y z) */ B,  /** Axiom: C x y z = x z y */ C,
     /** Axiom: K x y = x */         K,  /** Axiom: W x y = x y y */   W,

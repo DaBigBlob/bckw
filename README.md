@@ -6,4 +6,4 @@ A tiny no_std zero-dependency stack machine for Curry's B, C, K, W combinators w
 - Computationally complete: every closed untyped lambda term can be translated into BCKW using bracket abstraction. (Also implements WK = I optimization.)
 - Iterative reduction: uses an explicit stack.
 
-#### Every Line of Code in This Crate Was Written by (My) Hand
+Every line of code in this Crate was written by hand (no generative AI used).
