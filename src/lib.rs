@@ -8,7 +8,7 @@ use core::fmt::Debug;
 use crate::{axiom::Axiom, modus::MStack};
 
 /** Root expression: Hilbert Style axiom schemes and Modus Ponens */
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub enum Expr<Ex> {
     /// Modus ponens (the only rule) application list
     M(MStack<Ex>),

@@ -3,7 +3,7 @@ use alloc::rc::Rc;
 use crate::modus::MStack;
 
 /** Hilbert Style axiom schemes */
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub enum Axiom<Ex> {
     /** B x y z = x (y z) */B, /** C x y z = x z y */ C,
     /** K x y = x */        K,  /** W x y = x y y */  W,

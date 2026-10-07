@@ -8,7 +8,7 @@ use crate::{Expr::{self, *}, axiom::{ExtAxiom, Axiom::*}};
 /** Essentially a stack (backed by Vec) for the underlying stack machine
  * Implemented functions behave how they are named (and typed).
  */
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct MStack<Ex>(Vec<Expr<Ex>>);
 impl <Ex: Debug> Debug for MStack<Ex> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
