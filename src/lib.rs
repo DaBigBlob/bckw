@@ -35,7 +35,7 @@ impl <Ex: Debug> Debug for Expr<Ex> {
             M(m) => write!(f, "( {:?})", m),
             B => write!(f, "B"), C => write!(f, "C"),
             K => write!(f, "K"), W => write!(f, "W"),
-            E(ex) => write!(f, "#[{:?}]", ex)
+            E(ex) => write!(f, "{:?}", ex)
         }
     }
 }
